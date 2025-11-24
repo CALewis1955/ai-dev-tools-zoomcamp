@@ -17,8 +17,13 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
+
+def redirect_to_todos(request):
+    return redirect('todo_list')
 
 urlpatterns = [
+    path("", redirect_to_todos),
     path("admin/", admin.site.urls),
     path("api/", include("todo_app.urls")),
 ]

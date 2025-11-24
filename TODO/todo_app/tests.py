@@ -41,12 +41,30 @@ class TodoViewTest(TestCase):
         self.assertEqual(Todo.objects.count(), 2)
         self.assertEqual(response.json()['title'], 'New API Todo')
 
-    def test_get_todo_detail_api(self):
-        """Test retrieving a specific todo via API"""
+    def test_get_todo_detail_template(self):
+        """Test retrieving a specific todo via Template"""
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertEqual(data['title'], "Existing Todo")
+        self.assertTemplateUsed(response, 'todo_app/todo_detail.html')
+        self.assertContains(response, "Existing Todo")
+
+    def test_resolved_todos_view(self):
+        """Test the resolved todos list view"""
+        resolved_todo = Todo.objects.create(title="Resolved Todo", is_resolved=True)
+        url = reverse('resolved_todos')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'todo_app/resolved_todos.html')
+        self.assertContains(response, "Resolved Todo")
+        self.assertNotContains(response, "Existing Todo") # Existing Todo is not resolved
+
+    def test_todo_list_filters_resolved(self):
+        """Test that the main list excludes resolved todos"""
+        resolved_todo = Todo.objects.create(title="Resolved Todo", is_resolved=True)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Existing Todo")
+        self.assertNotContains(response, "Resolved Todo")
 
     def test_update_todo_api(self):
         """Test updating a todo via PUT API"""

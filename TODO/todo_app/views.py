@@ -7,7 +7,7 @@ from .models import Todo
 @csrf_exempt
 def todo_list(request):
     if request.method == 'GET':
-        todos = Todo.objects.all().order_by('-created_at')
+        todos = Todo.objects.filter(is_resolved=False).order_by('-created_at')
         return render(request, 'todo_app/home.html', {'todos': todos})
     
     elif request.method == 'POST':
@@ -31,20 +31,16 @@ def todo_list(request):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
+def resolved_todos(request):
+    todos = Todo.objects.filter(is_resolved=True).order_by('-created_at')
+    return render(request, 'todo_app/resolved_todos.html', {'todos': todos})
+
 @csrf_exempt
 def todo_detail(request, pk):
     todo = get_object_or_404(Todo, pk=pk)
 
     if request.method == 'GET':
-        return JsonResponse({
-            'id': todo.id,
-            'title': todo.title,
-            'description': todo.description,
-            'due_date': todo.due_date,
-            'is_resolved': todo.is_resolved,
-            'created_at': todo.created_at,
-            'updated_at': todo.updated_at
-        })
+        return render(request, 'todo_app/todo_detail.html', {'todo': todo})
     
     elif request.method == 'PUT':
         try:

@@ -1,7 +1,7 @@
 import json
 from django.test import TestCase, Client
 from django.urls import reverse
-from .models import Todo
+from todo_app.models import Todo
 
 class TodoModelTest(TestCase):
     def test_create_todo(self):
@@ -94,4 +94,3 @@ class TodoViewTest(TestCase):
         url = reverse('todo_detail', args=[999])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
-

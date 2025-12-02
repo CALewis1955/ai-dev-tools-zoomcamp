@@ -25,8 +25,8 @@ function App() {
         const backendHost = window.location.hostname.replace('-5173', '-8000');
         wsUrl = `${protocol}//${backendHost}/ws/${clientId}`;
       } else {
-        // Fallback: try to connect to port 8000 on the same host
-        wsUrl = `${protocol}//${window.location.hostname}:8000/ws/${clientId}`;
+        // Production: use the same host and port as the page
+        wsUrl = `${protocol}//${window.location.host}/ws/${clientId}`;
       }
     }
 

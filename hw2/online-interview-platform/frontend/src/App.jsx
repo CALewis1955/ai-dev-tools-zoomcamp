@@ -7,7 +7,6 @@ function App() {
   const [language, setLanguage] = useState('javascript');
   const [output, setOutput] = useState('');
   const [pyodide, setPyodide] = useState(null);
-  const [isPyodideLoading, setIsPyodideLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState('');
   const ws = useRef(null);
@@ -32,7 +31,6 @@ function App() {
     }
 
     console.log(`Connecting to WebSocket at: ${wsUrl}`);
-    setConnectionError(`Connecting to ${wsUrl}...`);
     
     try {
       ws.current = new WebSocket(wsUrl);
@@ -71,12 +69,10 @@ function App() {
         if (window.loadPyodide) {
           const pyodideInstance = await window.loadPyodide();
           setPyodide(pyodideInstance);
-          setIsPyodideLoading(false);
           console.log("Pyodide loaded");
         }
       } catch (e) {
         console.error("Error loading pyodide", e);
-        setIsPyodideLoading(false);
       }
     }
     loadPyodide();
@@ -128,7 +124,6 @@ function App() {
         };
 
         // Execute code
-        // eslint-disable-next-line no-new-func
         new Function(code)();
 
         console.log = originalLog;

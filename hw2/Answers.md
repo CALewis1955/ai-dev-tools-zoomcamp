@@ -14,4 +14,12 @@ Q.4
 
 Q.5
 
+    Pyodide
+
+Q.6
+
+    python:3.12-slim
+
+Q.7
+
     

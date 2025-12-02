@@ -8,21 +8,62 @@ function App() {
   const [output, setOutput] = useState('');
   const [pyodide, setPyodide] = useState(null);
   const [isPyodideLoading, setIsPyodideLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState('');
   const ws = useRef(null);
 
   useEffect(() => {
     const clientId = Date.now();
-    // Assuming backend is running on port 8000
-    ws.current = new WebSocket(`ws://localhost:8000/ws/${clientId}`);
+    
+    // Determine WebSocket URL based on environment
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    let wsUrl = `${protocol}//localhost:8000/ws/${clientId}`;
+    
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      // Attempt to handle Codespaces/Gitpod URL patterns
+      // If current host has -5173, replace with -8000
+      if (window.location.hostname.includes('-5173')) {
+        const backendHost = window.location.hostname.replace('-5173', '-8000');
+        wsUrl = `${protocol}//${backendHost}/ws/${clientId}`;
+      } else {
+        // Fallback: try to connect to port 8000 on the same host
+        wsUrl = `${protocol}//${window.location.hostname}:8000/ws/${clientId}`;
+      }
+    }
 
-    ws.current.onopen = () => {
-      console.log('Connected to WebSocket');
-    };
+    console.log(`Connecting to WebSocket at: ${wsUrl}`);
+    setConnectionError(`Connecting to ${wsUrl}...`);
+    
+    try {
+      ws.current = new WebSocket(wsUrl);
 
-    ws.current.onmessage = (event) => {
-      const message = event.data;
-      setCode(message);
-    };
+      ws.current.onopen = () => {
+        console.log('Connected to WebSocket');
+        setIsConnected(true);
+        setConnectionError('');
+      };
+
+      ws.current.onclose = (event) => {
+        console.log('Disconnected from WebSocket', event);
+        setIsConnected(false);
+        if (!event.wasClean) {
+            setConnectionError(`Disconnected. Code: ${event.code}. Reason: ${event.reason || 'Unknown'}`);
+        }
+      };
+
+      ws.current.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setConnectionError('WebSocket error occurred. Check console.');
+      };
+
+      ws.current.onmessage = (event) => {
+        const message = event.data;
+        setCode(message);
+      };
+    } catch (err) {
+      setConnectionError(`Failed to create WebSocket: ${err.message}`);
+    }
+
 
     // Load Pyodide
     async function loadPyodide() {
@@ -51,6 +92,26 @@ function App() {
     setCode(value);
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(value);
+    }
+  };
+
+  const handleLanguageChange = (e) => {
+    const newLanguage = e.target.value;
+    setLanguage(newLanguage);
+
+    const defaultComments = {
+      javascript: '// Type your code here',
+      python: '# Type your code here',
+      java: '// Type your code here'
+    };
+
+    // If the current code is one of the default comments, update it to the new language's default
+    if (Object.values(defaultComments).includes(code.trim())) {
+      const newCode = defaultComments[newLanguage];
+      setCode(newCode);
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        ws.current.send(newCode);
+      }
     }
   };
 
@@ -99,7 +160,11 @@ function App() {
     <div className="app-container">
       <header>
         <h1>Online Interview Platform</h1>
-        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+        <div style={{ fontSize: '0.8rem', color: isConnected ? 'lightgreen' : 'red', display: 'flex', flexDirection: 'column' }}>
+          <span>{isConnected ? '● Connected' : '● Disconnected'}</span>
+          {!isConnected && <span style={{ fontSize: '0.6rem' }}>{connectionError}</span>}
+        </div>
+        <select value={language} onChange={handleLanguageChange}>
           <option value="javascript">JavaScript</option>
           <option value="python">Python</option>
           <option value="java">Java</option>

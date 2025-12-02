@@ -59,7 +59,7 @@ function App() {
         setCode(message);
       };
     } catch (err) {
-      setConnectionError(`Failed to create WebSocket: ${err.message}`);
+      console.error("Failed to create WebSocket:", err);
     }
 
 

@@ -1,29 +1,53 @@
-name: Deploy to GitHub Pages
+name: Deploy to Render
 
 on:
   push:
     branches:
       - main
 
-permissions:
-  contents: write
-
 jobs:
-  deploy:
+  ci-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install and Build
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      - name: Frontend Lint & Build Check
         working-directory: hw2/online-interview-platform/frontend
         run: |
           npm install
           npm run lint
           npm run build
 
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          folder: hw2/online-interview-platform/frontend/dist
-          token: ${{ secrets.PA_TOKEN }}
+          python-version: '3.12'
+
+      - name: Backend Tests
+        working-directory: hw2/online-interview-platform/backend
+        run: |
+          pip install .
+          pip install pytest httpx
+          pytest
+
+      - name: Verify Docker Build
+        working-directory: hw2/online-interview-platform
+        run: docker build -t online-interview-platform .
+
+      - name: Deploy to Render
+        if: success()
+        run: |
+          # Trigger Render Deploy Hook
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+            echo "Deployment triggered successfully."
+          else
+            echo "RENDER_DEPLOY_HOOK_URL not set. Skipping deployment trigger."
+            echo "Please set RENDER_DEPLOY_HOOK_URL in your GitHub Repository Secrets."
+          fi

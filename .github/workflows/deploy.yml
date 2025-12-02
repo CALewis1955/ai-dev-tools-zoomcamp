@@ -1,0 +1,29 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install and Build
+        working-directory: hw2/online-interview-platform/frontend
+        run: |
+          npm install
+          npm run lint
+          npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: hw2/online-interview-platform/frontend/dist
+          token: ${{ secrets.PA_TOKEN }}
